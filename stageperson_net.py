@@ -6,7 +6,8 @@
 
 """
 
-import os, sys
+import os, sys, time, socket
+import threading
 import argparse
 
 import numpy as np
@@ -268,10 +269,13 @@ def doTrain(modelname):
 Load an image and return input data for the network
 """
 def inputImage(imagefile):
-    img = load_img(imagefile, target_size=(118, 224), color_mode="rgb")
-    arr = img_to_array(img) / 255
-    inp = np.array([arr])  # Convert single image to a batch.
-    return inp
+    try:
+        img = load_img(imagefile, target_size=(118, 224), color_mode="rgb")
+        arr = img_to_array(img) / 255
+        inp = np.array([arr])  # Convert single image to a batch.
+        return inp
+    except:
+        return None
 
 """
 Predict class of an image
@@ -279,8 +283,98 @@ Predict class of an image
 def predictImage(model, imagefile):
     global classnames
     inp = inputImage(imagefile)
-    pr = model.predict(inp)
-    return (np.max(pr), classnames[np.argmax(pr)])
+    if inp is not None:
+        pr = model.predict(inp)
+        return (np.max(pr), classnames[np.argmax(pr)])
+    else:
+        return (0, 'error')
+
+
+class ModelServer(threading.Thread):
+
+    def __init__(self, port, model):
+        threading.Thread.__init__(self)
+
+        # Create a TCP/IP socket
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.settimeout(3) # timeout when listening (exit with CTRL+C)
+        # Bind the socket to the port
+        server_address = ('', port)
+        self.sock.bind(server_address)
+        self.sock.listen(1)
+
+        self.model = model
+
+        print("Model Server running on port %d" %port)
+        
+        self.dorun = True # server running
+        self.connection = None  # connection object
+
+    def stop(self):
+        self.dorun = False
+
+    def connect(self):
+        connected = False
+        while (self.dorun and not connected):
+            try:
+                # print 'Waiting for a connection ...'
+                # Wait for a connection
+                self.connection, client_address = self.sock.accept()
+                self.connection.settimeout(3)
+                connected = True
+                print('Connection from %s' %str(client_address))
+            except:
+                pass #print("Listen again ...")   
+
+
+    def run(self):
+        while (self.dorun):
+            self.connect()  # wait for connection
+            try:
+                # Receive data
+                while (self.dorun):
+                    try:
+                        data = self.connection.recv(256)
+                        data = data.strip().decode('UTF-8')
+                    except socket.timeout:
+                        data = "***"
+                    except:
+                        data = None
+                    
+                    if (data!=None and data!="" and data!="***"):
+                        self.received = data
+                        print('Received: %s' %data)
+                        if data=='REQ':
+                            self.connection.send('ACK\n\r'.encode('UTF-8'))
+                        else:
+                            v = data.split(' ')
+                            if v[0]=='EVAL' and len(v)>1:
+                                print('Eval image [%s]' %v[1])
+                                (p,c) = predictImage(self.model,v[1])
+                                print("Predicted: %s, prob: %.3f" %(c,p))
+                                res = "%s %.3f\n\r" %(c,p)
+                                res = res.encode('UTF-8')
+                                self.connection.send(res)
+                            else:
+                                print('Received: %s' %data)
+                    elif (data == None or data==""):
+                        break
+            finally:
+                print('Connection closed.')
+                # Clean up the connection
+                if (self.connection != None):
+                    self.connection.close()
+                    self.connection = None
+
+    # wait for Keyboard interrupt
+    def spin(self):
+        while (self.dorun):
+            try:
+                time.sleep(120)
+            except KeyboardInterrupt:
+                print("Exit")
+                self.dorun = False
 
 
 """
@@ -288,8 +382,11 @@ Start prediction server
 """
 def startServer(port, model):
     print("Starting stagepersondetection server on port %d" %port)
-    # TODO
-
+    print("Send string message 'EVAL <imagefile>'")
+    mserver = ModelServer(port, model)
+    mserver.start()
+    mserver.spin() 
+    mserver.stop()
 
 
 if __name__=='__main__':

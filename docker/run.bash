@@ -14,7 +14,7 @@ SPD_DIR=`pwd | gawk '{ print gensub(/\/docker/, "", 1) }'`
 echo "Running image $IMAGENAME:$VERSION ..."
 
 docker run -it \
-    --name ML --rm \
+    --name stagepersondetection --rm \
     --privileged \
     --net=host \
     -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
