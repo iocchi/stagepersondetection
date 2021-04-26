@@ -286,8 +286,8 @@ def predictImage(model, imagefile):
 """
 Start prediction server
 """
-def startServer(port):
-    print("Starting stagepersondetection server on port %d", port)
+def startServer(port, model):
+    print("Starting stagepersondetection server on port %d" %port)
     # TODO
 
 
@@ -306,7 +306,7 @@ if __name__=='__main__':
     parser.add_argument('--server', default = False, action ='store_true', 
                         help='Start in server mode')
     parser.add_argument('-server_port', type=int, default=default_server_port, 
-                        help='server port')
+                        help='server port (default: %d)' %default_server_port)
 
     args = parser.parse_args()
 
@@ -330,5 +330,4 @@ if __name__=='__main__':
         print("Please specify a model name and an operation to perform.")
         sys.exit(1)
 
-# python stageperson_net -test stageperson5_v3
 
