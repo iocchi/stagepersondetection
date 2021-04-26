@@ -18,11 +18,11 @@ Run these commands in the container.
 
 * Train
 
-        python stageperson_net.py -modelname <new_modelname> --train
+      python stageperson_net.py -modelname <new_modelname> --train
 
     Example:
 
-        python stageperson_net.py -modelname stageperson5_NEW --train
+      python stageperson_net.py -modelname stageperson5_NEW --train
 
 * Test
 
