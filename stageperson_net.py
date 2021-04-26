@@ -283,43 +283,24 @@ def predictImage(model, imagefile):
     return (np.max(pr), classnames[np.argmax(pr)])
 
 
-def doTest(modelname):
-    model = loadModel(modelname)
-    evalModel(model)
-
-
+"""
+Start prediction server
+"""
 def startServer(port):
     print("Starting stagepersondetection server on port %d", port)
     # TODO
 
-def testimages():
-
-    p1 = inputImage('test/none/20210425-170843-photo.jpg')
-    p2 = inputImage('test/yellow/20210425-171333-photo.jpg')
-    p3 = inputImage('test/blue/20210425-170928-photo.jpg')
-    p4 = inputImage('test/green/20210425-171007-photo.jpg')
-    p5 = inputImage('test/red/20210425-220733-photo.jpg')
-
-    c1 = model.predict(p1)
-    c2 = model.predict(p2)
-    c3 = model.predict(p3)
-    c4 = model.predict(p4)
-    c5 = model.predict(p5)
-
-    print("none:   %.3f  %s" %(np.max(c1), classnames[np.argmax(c1)]))
-    print("yellow: %.3f  %s" %(np.max(c2), classnames[np.argmax(c2)]))
-    print("blue:   %.3f  %s" %(np.max(c3), classnames[np.argmax(c3)]))
-    print("green:  %.3f  %s" %(np.max(c4), classnames[np.argmax(c4)]))
-    print("red:    %.3f  %s" %(np.max(c5), classnames[np.argmax(c5)]))
 
 
 if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-train", type=str, default=None,
-                        help="Train and save model")
-    parser.add_argument("-test", type=str, default=None,
-                        help="Test saved model")
+    parser.add_argument("-modelname", type=str, default=None,
+                        help="Model name to load/save")
+    parser.add_argument("--train", default = False, action ='store_true',
+                        help="Train and save the model")
+    parser.add_argument("--test", default = False, action ='store_true',
+                        help="Test the model")
     parser.add_argument("-predict", type=str, default=None,
                         help="Image file to predict")
     parser.add_argument('--server', default = False, action ='store_true', 
@@ -329,18 +310,25 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
-    if (args.train != None):
-        doTrain(args.train)
-    elif (args.test != None):
-        doTest(args.test)
+    if (args.modelname == None):
+        print("Please specify a model name and an operation to perform.")
+        sys.exit(1)
+
+    if (args.train):
+        doTrain(args.modelname)
+    elif (args.test):
+        model = loadModel(args.modelname)
+        evalModel(model)
     elif (args.predict != None):
-        model = loadModel('stageperson5_v3')
+        model = loadModel(args.modelname)
         (p,c) = predictImage(model,args.predict)
         print("Predicted: %s, prob: %.3f" %(c,p))
     elif (args.server):
-        startServer(args.server_port)
+        model = loadModel(args.modelname)
+        startServer(args.server_port, model)
     else:
-        print("No action specified. Use '-h' flag to see options available.")
+        print("Please specify a model name and an operation to perform.")
+        sys.exit(1)
 
 # python stageperson_net -test stageperson5_v3
 
