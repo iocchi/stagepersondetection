@@ -44,9 +44,9 @@ Run these commands in the container.
 
 * Start server mode
 
-      python stageperson_net.py -modelname <saved_modelname> -server_port <server_port>
+      python stageperson_net.py -modelname <saved_modelname> --server -server_port <server_port>
 
     Example:
 
-      python stageperson_net.py -modelname stageperson5_v3 -server_port 9250
+      python stageperson_net.py -modelname stageperson5_v3 --server -server_port 9250
 
