@@ -7,10 +7,22 @@ Dataset, models and app for Stage person detection
     cd docker
     ./build.bash
 
+Note: to build an image with a specific version of tensorflow or additional libraries and tools, follow these steps (do not edit ```Dockerfile``` directly)
+
+    cd docker
+    cp Dockerfile Dockerfile.<version>
+    edit Dockerfile.<version>
+    ./build.bash Dockerfile.<version> <version>
+
 ## Run
 
     cd docker
     ./run.bash
+
+To run a specific image version
+
+    ./run.bash <version>
+
 
 ## Use
 
