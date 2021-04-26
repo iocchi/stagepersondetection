@@ -62,3 +62,23 @@ Run these commands in the container.
 
       python stageperson_net.py -modelname stageperson5_v3 --server -server_port 9250
 
+* Client
+
+Send string message 
+
+      EVAL <imagefile>
+
+and get return string with prediction
+
+      <class> <probability>
+
+Example:
+
+      echo "EVAL dataset/test/yellow/20210425-201650-photo.jpg" | netcat -w 3 localhost 9250
+      yellow 1.000
+
+
+Note: image file must be accessible from the docker container running the server. Make sure to share some volume between the image acquisition process and the Stage person detection server.
+
+
+
