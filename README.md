@@ -27,26 +27,26 @@ Run these commands in the container.
 * Test
 
 
-        python stageperson_net.py -modelname <saved_modelname> --test 
+      python stageperson_net.py -modelname <saved_modelname> --test 
 
     Example:
 
-        python stageperson_net.py -modelname stageperson5_v3 --test 
+      python stageperson_net.py -modelname stageperson5_v3 --test 
 
 
 * Predict 
 
-        python stageperson_net.py -modelname <saved_modelname> -predict <imagefile>
+      python stageperson_net.py -modelname <saved_modelname> -predict <imagefile>
 
     Example:
 
-        python stageperson_net.py -modelname stageperson5_v3 -predict dataset/test/red/20210425-220733-photo.jpg
+      python stageperson_net.py -modelname stageperson5_v3 -predict dataset/test/red/20210425-220733-photo.jpg
 
 * Start server mode
 
-        python stageperson_net.py -modelname <saved_modelname> -server_port <server_port>
+      python stageperson_net.py -modelname <saved_modelname> -server_port <server_port>
 
     Example:
 
-        python stageperson_net.py -modelname stageperson5_v3 -server_port 9250
+      python stageperson_net.py -modelname stageperson5_v3 -server_port 9250
 
