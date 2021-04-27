@@ -55,7 +55,7 @@ def loadData():
     batch_size = 32
 
     train_datagen = ImageDataGenerator(
-        rescale = 1. / 255,\
+        #rescale = 1. / 255,\
         zoom_range=0.1,\
         #rotation_range=10,\
         width_shift_range=0.1,\
@@ -65,18 +65,18 @@ def loadData():
 
     train_generator = train_datagen.flow_from_directory(
         directory=trainingset,
-        target_size=(height, width),
+        #target_size=(height, width),
         color_mode="rgb",
         batch_size=batch_size,
         class_mode="categorical",
         shuffle=True)
 
-    test_datagen = ImageDataGenerator(
-        rescale = 1. / 255)
+    test_datagen = ImageDataGenerator()
+        #rescale = 1. / 255)
 
     test_generator = test_datagen.flow_from_directory(
         directory=testset,
-        target_size=(height, width),
+        #target_size=(height, width),
         color_mode="rgb",
         batch_size=batch_size//2,
         class_mode="categorical",
@@ -111,7 +111,7 @@ def StagePersonNet(input_shape, num_classes, regl2 = 0.001, lr=0.001):
 
     model = Sequential()
 
-    model.add(Input(shape=input_shape))
+    model.add(Input(shape=(120,160,3)))
     model.add(Resizing(height, width, interpolation="bilinear", name=None))
     model.add(Rescaling(scale=1./255.))
 
