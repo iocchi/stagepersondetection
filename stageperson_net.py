@@ -361,6 +361,7 @@ class ModelServer(threading.Thread):
     def run(self):
 
         imgsize = -1
+        res = '0 none'
         while (self.dorun):
             self.connect()  # wait for connection
             try:
@@ -377,33 +378,36 @@ class ModelServer(threading.Thread):
                     if (data!=None and data!="" and data!="***"):
                         self.received = data
                         print('Received: %s' %data)
-                        if data=='REQ':
+                        v = data.split(' ')
+                        if v[0]=='REQ':
                             self.connection.send('ACK\n\r'.encode('UTF-8'))
-                        else:
-                            v = data.split(' ')
-                            if v[0]=='EVAL' and len(v)>1:
-                                print('Eval image [%s]' %v[1])
-                                (p,c) = predictImage(self.model,v[1])
+                        elif v[0]=='GETRESULT':
+                            ressend = (res+'\n\r').encode('UTF-8')
+                            self.connection.send(ressend)                            
+                        elif v[0]=='EVAL' and len(v)>1:
+                            print('Eval image [%s]' %v[1])
+                            (p,c) = predictImage(self.model,v[1])
+                            print("Predicted: %s, prob: %.3f" %(c,p))
+                            res = "%s %.3f" %(c,p)
+                            ressend = (res+'\n\r').encode('UTF-8')
+                            self.connection.send(ressend)
+                        elif v[0]=='RAW' and len(v)>1:
+                            imgsize = int(v[1])
+                            print("Raw image size: %d" %imgsize)
+                            buf = self.recvall(imgsize)
+                            if buf is not None:
+                                print("Image received size: %d " %(len(buf)))
+                                a = np.fromstring(buf, dtype='uint8')
+                                a = a.reshape((160,120,3))
+                                inp = np.array([a])
+                                pr = model.predict(inp)
+                                (p,c) = (np.max(pr), classnames[np.argmax(pr)])
                                 print("Predicted: %s, prob: %.3f" %(c,p))
-                                res = "%s %.3f\n\r" %(c,p)
-                                res = res.encode('UTF-8')
-                                self.connection.send(res)
-                            elif v[0]=='RAW' and len(v)>1:
-                                imgsize = int(v[1])
-                                print("Raw image size: %d" %imgsize)
-                                buf = self.recvall(imgsize)
-                                if buf is not None:
-                                    print("Image received size: %d " %(len(buf)))
-                                    a = np.fromstring(buf, dtype='uint8')
-                                    a = a.reshape((160,120,3))
-                                    print(a.shape)
-                                    inp = np.array([a])
-                                    pr = model.predict(inp)
-                                    (p,c) = (np.max(pr), classnames[np.argmax(pr)])
-                                    print("Predicted: %s, prob: %.3f" %(c,p))
-
-                            elif len(data)<20:
-                                print('Received: %s' %data)
+                                res = "%s %.3f" %(c,p)
+                                ressend = (res+'\n\r').encode('UTF-8')
+                                self.connection.send(ressend)
+                        else:
+                            print('Received: %s' %data)
 
                     elif (data == None or data==""):
                         break
