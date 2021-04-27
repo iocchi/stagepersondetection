@@ -271,6 +271,16 @@ def doTrain(modelname):
     saveModel(model, modelname)
 
 
+def moreTrain(modelname):
+    model = loadModel(modelname)
+
+    adam = optimizers.Adam(lr=lr)
+    model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
+    trainModel(model,epochs=10)
+
+    saveModel(model, modelname)
+
+
 
 """
 Load an image and return input data for the network
@@ -430,6 +440,8 @@ if __name__=='__main__':
                         help="Model name to load/save")
     parser.add_argument("--train", default = False, action ='store_true',
                         help="Train and save the model")
+    parser.add_argument("--moretrain", default = False, action ='store_true',
+                        help="Keep training")
     parser.add_argument("--test", default = False, action ='store_true',
                         help="Test the model")
     parser.add_argument("-predict", type=str, default=None,
@@ -450,6 +462,8 @@ if __name__=='__main__':
     elif (args.test):
         model = loadModel(args.modelname)
         evalModel(model)
+    elif (args.moretrain):
+        moreTrain(args.modelname)
     elif (args.predict != None):
         model = loadModel(args.modelname)
         (p,c) = predictImage(model,args.predict)
