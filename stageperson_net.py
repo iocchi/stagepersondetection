@@ -272,6 +272,9 @@ def doTrain(modelname):
 
 
 def moreTrain(modelname, lr=0.0001):
+
+    input_shape, num_classes = loadData()
+
     model = loadModel(modelname)
 
     adam = optimizers.Adam(lr=lr)
