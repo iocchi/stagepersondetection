@@ -17,10 +17,7 @@ docker run -it \
     --name stagepersondetection --rm \
     --privileged \
     --net=host \
-    -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
-    -v $HOME/.Xauthority:/home/robot/.Xauthority:rw \
-    -e DISPLAY=$DISPLAY \
-    -e QT_X11_NO_MITSHM=1 \
     -v $SPD_DIR:/home/robot/src/stageperson_detection \
+    -v $HOME/playground/images:/home/robot/images \
     $IMAGENAME:$VERSION
 

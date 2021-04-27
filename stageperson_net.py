@@ -17,11 +17,13 @@ import keras
 from keras.preprocessing.image import ImageDataGenerator, load_img, img_to_array
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout, Flatten,\
-                         Conv2D, MaxPooling2D
+                         Conv2D, MaxPooling2D, Input
 from keras.layers.normalization import BatchNormalization
 from keras import regularizers
 from keras import optimizers
 from keras.models import load_model
+from keras.layers.experimental.preprocessing import Resizing,Rescaling
+
 
 import matplotlib.pyplot as plt
 
@@ -38,6 +40,8 @@ test_generator = None
 classnames = ['blue', 'green', 'none', 'red', 'yellow']
 
 default_server_port = 9250
+height = 118
+width = 224
 
 """
 Load data from folders
@@ -61,7 +65,7 @@ def loadData():
 
     train_generator = train_datagen.flow_from_directory(
         directory=trainingset,
-        target_size=(118, 224),
+        target_size=(height, width),
         color_mode="rgb",
         batch_size=batch_size,
         class_mode="categorical",
@@ -72,7 +76,7 @@ def loadData():
 
     test_generator = test_datagen.flow_from_directory(
         directory=testset,
-        target_size=(118, 224),
+        target_size=(height, width),
         color_mode="rgb",
         batch_size=batch_size//2,
         class_mode="categorical",
@@ -81,7 +85,8 @@ def loadData():
 
     num_samples = train_generator.n
     num_classes = train_generator.num_classes
-    input_shape = train_generator.image_shape
+    input_shape = (height, width, 3)
+
 
     classnames = [k for k,v in train_generator.class_indices.items()]
 
@@ -106,8 +111,12 @@ def StagePersonNet(input_shape, num_classes, regl2 = 0.001, lr=0.001):
 
     model = Sequential()
 
+    model.add(Input(shape=input_shape))
+    model.add(Resizing(height, width, interpolation="bilinear", name=None))
+    model.add(Rescaling(scale=1./255.))
+
     # C1 Convolutional Layer 
-    model.add(Conv2D(filters=96, input_shape=input_shape, kernel_size=(11,11),\
+    model.add(Conv2D(filters=96, kernel_size=(11,11),\
                      strides=(2,4), padding='valid'))
     model.add(Activation('relu'))
     # Pooling
@@ -134,7 +143,7 @@ def StagePersonNet(input_shape, num_classes, regl2 = 0.001, lr=0.001):
     # Flatten
     model.add(Flatten())
 
-    flatten_shape = (input_shape[0]*input_shape[1]*input_shape[2],)
+    #flatten_shape = (input_shape[0]*input_shape[1]*input_shape[2],)
     
     # D1 Dense Layer
     model.add(Dense(1000, kernel_regularizer=regularizers.l2(regl2)))
@@ -222,12 +231,10 @@ def evalModel(model):
 
     testset = datadir + '/test/'
 
-    test_datagen = ImageDataGenerator(
-        rescale = 1. / 255)
+    test_datagen = ImageDataGenerator()
 
     test_generator = test_datagen.flow_from_directory(
         directory=testset,
-        target_size=(118, 224),
         color_mode="rgb",
         batch_size=1,
         class_mode="categorical",
@@ -270,8 +277,8 @@ Load an image and return input data for the network
 """
 def inputImage(imagefile):
     try:
-        img = load_img(imagefile, target_size=(118, 224), color_mode="rgb")
-        arr = img_to_array(img) / 255
+        img = load_img(imagefile, color_mode="rgb")  # target_size=(118, 224), 
+        arr = img_to_array(img) # / 255
         inp = np.array([arr])  # Convert single image to a batch.
         return inp
     except:
@@ -328,7 +335,19 @@ class ModelServer(threading.Thread):
                 pass #print("Listen again ...")   
 
 
+    def recvall(self, count):
+        buf = b''
+        while count:
+            newbuf = self.connection.recv(count)
+            if not newbuf: return None
+            buf += newbuf
+            count -= len(newbuf)
+        return buf
+
+
     def run(self):
+
+        imgsize = -1
         while (self.dorun):
             self.connect()  # wait for connection
             try:
@@ -356,8 +375,23 @@ class ModelServer(threading.Thread):
                                 res = "%s %.3f\n\r" %(c,p)
                                 res = res.encode('UTF-8')
                                 self.connection.send(res)
-                            else:
+                            elif v[0]=='RAW' and len(v)>1:
+                                imgsize = int(v[1])
+                                print("Raw image size: %d" %imgsize)
+                                buf = self.recvall(imgsize)
+                                if buf is not None:
+                                    print("Image received size: %d " %(len(buf)))
+                                    a = np.fromstring(buf, dtype='uint8')
+                                    a = a.reshape((160,120,3))
+                                    print(a.shape)
+                                    inp = np.array([a])
+                                    pr = model.predict(inp)
+                                    (p,c) = (np.max(pr), classnames[np.argmax(pr)])
+                                    print("Predicted: %s, prob: %.3f" %(c,p))
+
+                            elif len(data)<20:
                                 print('Received: %s' %data)
+
                     elif (data == None or data==""):
                         break
             finally:
