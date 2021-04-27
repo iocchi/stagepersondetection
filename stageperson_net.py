@@ -271,7 +271,7 @@ def doTrain(modelname):
     saveModel(model, modelname)
 
 
-def moreTrain(modelname):
+def moreTrain(modelnamem lr=0.0001):
     model = loadModel(modelname)
 
     adam = optimizers.Adam(lr=lr)
