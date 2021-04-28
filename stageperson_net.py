@@ -391,14 +391,16 @@ class ModelServer(threading.Thread):
                             res = "%s %.3f" %(c,p)
                             ressend = (res+'\n\r').encode('UTF-8')
                             self.connection.send(ressend)
-                        elif v[0]=='RAW' and len(v)>1:
-                            imgsize = int(v[1])
-                            print("Raw image size: %d" %imgsize)
+                        elif v[0]=='RGB' and len(v)>=3:
+                            imgwidth = int(v[1])
+                            imgheight = int(v[2])
+                            imgsize = imgwidth*imgheight*3
+                            print("RGB image size: %d" %imgsize)
                             buf = self.recvall(imgsize)
                             if buf is not None:
                                 print("Image received size: %d " %(len(buf)))
                                 a = np.fromstring(buf, dtype='uint8')
-                                a = a.reshape((160,120,3))
+                                a = a.reshape((imgwidth,imgheight,3))
                                 inp = np.array([a])
                                 pr = model.predict(inp)
                                 (p,c) = (np.max(pr), classnames[np.argmax(pr)])
@@ -434,6 +436,7 @@ Start prediction server
 def startServer(port, model):
     print("Starting stagepersondetection server on port %d" %port)
     print("Send string message 'EVAL <imagefile>'")
+    print("Send RGB image 'RGB <width> <height>' followed by data buffer")
     mserver = ModelServer(port, model)
     mserver.start()
     mserver.spin() 

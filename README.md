@@ -66,9 +66,9 @@ Run these commands in the container.
 
     Send string message 
 
-      EVAL <imagefile>
+      EVAL <imagefile>\r\n
 
-    and get return string with prediction
+    Receive result string with prediction
 
       <class> <probability>
 
@@ -80,5 +80,13 @@ Run these commands in the container.
 
     Note: image file must be accessible from the docker container running the server. Make sure to share some volume/folder between the image acquisition process and the Stage person detection server.
 
+    Send image raw RGB data
+
+      RGB <width> <height>\r\n
+      [<width>*<height>*3 data buffer]
+
+    Receive result string with prediction
+
+      <class> <probability>
 
 
