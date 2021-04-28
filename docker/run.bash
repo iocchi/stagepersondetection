@@ -17,7 +17,7 @@ docker run -it \
     --name stagepersondetection --rm \
     --privileged \
     --net=host \
-    -v $SPD_DIR:/home/robot/src/stageperson_detection \
+    -v $SPD_DIR:/home/robot/src/stagepersondetection \
     -v $HOME/playground/images:/home/robot/images \
     $IMAGENAME:$VERSION
 

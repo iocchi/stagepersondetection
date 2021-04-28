@@ -40,7 +40,11 @@ USER robot
 
 RUN echo "set -g mouse on" > $HOME/.tmux.conf 
 
-WORKDIR /home/robot/src/stageperson_detection
+RUN mkdir -p $HOME/src && cd $HOME/src && \
+    git clone --depth 1 https://github.com/iocchi/stagepersondetection.git
+
+
+WORKDIR /home/robot/src/stagepersondetection
 
 CMD ["/usr/bin/tmux" ]
 

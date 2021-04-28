@@ -15,4 +15,5 @@ if [ ! "$2" == "" ]; then
 fi
 
 docker build -t $IMAGENAME:$VERSION -f $DOCKERFILE .
+docker tag $IMAGENAME:$VERSION iocchi/stagepersondetection
 
