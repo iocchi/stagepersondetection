@@ -34,7 +34,7 @@ Run these commands in the container.
 
     Example:
 
-      python stageperson_net.py -modelname stageperson5_NEW --train
+      python stageperson_net.py -modelname spd_NEW --train
 
 * Test
 
@@ -43,7 +43,7 @@ Run these commands in the container.
 
     Example:
 
-      python stageperson_net.py -modelname stageperson5_v3 --test 
+      python stageperson_net.py -modelname spd  --test 
 
 
 * Predict 
@@ -52,7 +52,7 @@ Run these commands in the container.
 
     Example:
 
-      python stageperson_net.py -modelname stageperson5_v3 -predict dataset/test/red/20210425-220733-photo.jpg
+      python stageperson_net.py -modelname spd -predict dataset/test/red/20210425-220733-photo.jpg
 
 * Start server mode
 
@@ -60,7 +60,7 @@ Run these commands in the container.
 
     Example:
 
-      python stageperson_net.py -modelname stageperson5_v3 --server -server_port 9250
+      python stageperson_net.py -modelname spd --server -server_port 9250
 
 * Client
 
