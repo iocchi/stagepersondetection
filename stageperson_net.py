@@ -40,8 +40,10 @@ test_generator = None
 classnames = ['blue', 'green', 'none', 'red', 'yellow']
 
 default_server_port = 9250
-height = 118
-width = 224
+#height = 118
+#width = 224
+height = 120
+width = 160
 
 """
 Load data from folders
@@ -55,7 +57,7 @@ def loadData():
     batch_size = 32
 
     train_datagen = ImageDataGenerator(
-        #rescale = 1. / 255,\
+        rescale = 1. / 255,\
         zoom_range=0.1,\
         #rotation_range=10,\
         width_shift_range=0.1,\
@@ -65,20 +67,20 @@ def loadData():
 
     train_generator = train_datagen.flow_from_directory(
         directory=trainingset,
-        #target_size=(height, width),
+        target_size=(height, width),
         color_mode="rgb",
         batch_size=batch_size,
         class_mode="categorical",
         shuffle=True)
 
-    test_datagen = ImageDataGenerator()
-        #rescale = 1. / 255)
+    test_datagen = ImageDataGenerator(
+        rescale = 1. / 255)
 
     test_generator = test_datagen.flow_from_directory(
         directory=testset,
-        #target_size=(height, width),
+        target_size=(height, width),
         color_mode="rgb",
-        batch_size=batch_size//2,
+        batch_size=batch_size,
         class_mode="categorical",
         shuffle=False
     )
@@ -107,7 +109,7 @@ StagePersonNet model
 
 """
 
-def StagePersonNet(input_shape, num_classes, regl2 = 0.001, lr=0.001):
+def StagePersonNet_v1(input_shape, num_classes, regl2 = 0.001, lr=0.001):
 
     model = Sequential()
 
@@ -143,8 +145,6 @@ def StagePersonNet(input_shape, num_classes, regl2 = 0.001, lr=0.001):
     # Flatten
     model.add(Flatten())
 
-    #flatten_shape = (input_shape[0]*input_shape[1]*input_shape[2],)
-    
     # D1 Dense Layer
     model.add(Dense(1000, kernel_regularizer=regularizers.l2(regl2)))
     model.add(Activation('relu'))
@@ -170,7 +170,74 @@ def StagePersonNet(input_shape, num_classes, regl2 = 0.001, lr=0.001):
     adam = optimizers.Adam(lr=lr)
     model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
 
+    model.summary()
+
     return model
+
+
+def StagePersonNet(input_shape, num_classes, regl2 = 0.001, lr=0.001):
+
+    model = Sequential()
+
+    model.add(Input(shape=input_shape))
+
+    # C1 Convolutional Layer 
+    model.add(Conv2D(filters=96, kernel_size=(9,9),\
+                     strides=(3,4), padding='same'))
+    model.add(Activation('relu'))
+    # Pooling
+    model.add(MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='valid'))
+    # Batch Normalisation before passing it to the next layer
+    model.add(BatchNormalization())
+
+    # C2 Convolutional Layer
+    model.add(Conv2D(filters=128, kernel_size=(5,5), strides=(1,1), padding='valid'))
+    model.add(Activation('relu'))
+    # Pooling
+    model.add(MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='valid'))
+    # Batch Normalisation
+    model.add(BatchNormalization())
+
+    # C3 Convolutional Layer
+    model.add(Conv2D(filters=128, kernel_size=(3,3), strides=(1,1), padding='valid'))
+    model.add(Activation('relu'))
+    # Pooling
+    model.add(MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='valid'))
+    # Batch Normalisation
+    model.add(BatchNormalization())
+
+    # C4 Convolutional Layer
+    model.add(Conv2D(filters=256, kernel_size=(3,3), strides=(1,1), padding='valid'))
+    model.add(Activation('relu'))
+
+    # Flatten
+    model.add(Flatten())
+   
+    # D1 Dense Layer
+    model.add(Dense(256, kernel_regularizer=regularizers.l2(regl2)))
+    model.add(Activation('relu'))
+    # Batch Normalisation
+    model.add(BatchNormalization())
+
+    # D2 Dense Layer
+    model.add(Dense(100,kernel_regularizer=regularizers.l2(regl2)))
+    model.add(Activation('relu'))
+    # Batch Normalisation
+    model.add(BatchNormalization())
+
+    # Output Layer
+    model.add(Dense(num_classes))
+    model.add(Activation('softmax'))
+
+    # Compile
+
+    adam = optimizers.Adam(lr=lr)
+    model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
+
+    model.summary()
+    
+    return model
+
 
 
 """
@@ -231,10 +298,12 @@ def evalModel(model):
 
     testset = datadir + '/test/'
 
-    test_datagen = ImageDataGenerator()
+    test_datagen = ImageDataGenerator(
+        rescale = 1. / 255)
 
     test_generator = test_datagen.flow_from_directory(
         directory=testset,
+        target_size=(height, width),
         color_mode="rgb",
         batch_size=1,
         class_mode="categorical",
@@ -258,12 +327,12 @@ def doTrain(modelname):
 
     model = StagePersonNet(input_shape,num_classes)
 
-    adam = optimizers.Adam(lr=0.001)
+    adam = optimizers.Adam(lr=1e-4)
     model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
 
     trainModel(model,epochs=30)
 
-    for lr in [0.0005, 0.0004, 0.0003, 0.0002, 0.0001]:
+    for lr in [5e-5, 3e-5, 1e-5]:
         adam = optimizers.Adam(lr=lr)
         model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
         trainModel(model,epochs=10)
@@ -290,8 +359,8 @@ Load an image and return input data for the network
 """
 def inputImage(imagefile):
     try:
-        img = load_img(imagefile, color_mode="rgb")  # target_size=(118, 224), 
-        arr = img_to_array(img) # / 255
+        img = load_img(imagefile, color_mode="rgb", target_size=(height, width))
+        arr = img_to_array(img) / 255
         inp = np.array([arr])  # Convert single image to a batch.
         return inp
     except:
