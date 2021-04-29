@@ -22,7 +22,6 @@ from keras.layers.normalization import BatchNormalization
 from keras import regularizers
 from keras import optimizers
 from keras.models import load_model
-from keras.layers.experimental.preprocessing import Resizing,Rescaling
 
 
 import matplotlib.pyplot as plt
@@ -40,8 +39,6 @@ test_generator = None
 classnames = ['blue', 'green', 'none', 'red', 'yellow']
 
 default_server_port = 9250
-#height = 118
-#width = 224
 height = 120
 width = 160
 
@@ -111,6 +108,8 @@ StagePersonNet model
 
 def StagePersonNet_v1(input_shape, num_classes, regl2 = 0.001, lr=0.001):
 
+    from keras.layers.experimental.preprocessing import Resizing,Rescaling
+
     model = Sequential()
 
     model.add(Input(shape=(120,160,3)))
@@ -148,16 +147,12 @@ def StagePersonNet_v1(input_shape, num_classes, regl2 = 0.001, lr=0.001):
     # D1 Dense Layer
     model.add(Dense(1000, kernel_regularizer=regularizers.l2(regl2)))
     model.add(Activation('relu'))
-    # Dropout
-    #model.add(Dropout(0.4))
     # Batch Normalisation
     model.add(BatchNormalization())
 
     # D2 Dense Layer
     model.add(Dense(100,kernel_regularizer=regularizers.l2(regl2)))
     model.add(Activation('relu'))
-    # Dropout
-    #model.add(Dropout(0.4))
     # Batch Normalisation
     model.add(BatchNormalization())
 
@@ -174,7 +169,9 @@ def StagePersonNet_v1(input_shape, num_classes, regl2 = 0.001, lr=0.001):
 
     return model
 
-
+"""
+  Simple model (868 k parameters)
+"""
 def StagePersonNet(input_shape, num_classes, regl2 = 0.001, lr=0.001):
 
     model = Sequential()
@@ -327,12 +324,12 @@ def doTrain(modelname):
 
     model = StagePersonNet(input_shape,num_classes)
 
-    adam = optimizers.Adam(lr=1e-4)
+    adam = optimizers.Adam(lr=5e-4)
     model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
 
     trainModel(model,epochs=30)
 
-    for lr in [5e-5, 3e-5, 1e-5]:
+    for lr in [3e-4, 1e-4, 1e-5]:
         adam = optimizers.Adam(lr=lr)
         model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
         trainModel(model,epochs=10)
