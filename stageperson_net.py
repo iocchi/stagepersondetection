@@ -411,12 +411,13 @@ class ModelServer(threading.Thread):
                 connected = True
                 print('Connection from %s' %str(client_address))
             except:
-                pass #print("Listen again ...")   
+                pass #print("Listen again ...")
 
-
-    def recvall(self, count):
-        buf = b''
-        while count:
+    # buf may contain a first chunk of data
+    def recvall(self, count, chunk):
+        buf = chunk
+        count -= len(buf)
+        while count>0:
             newbuf = self.connection.recv(count)
             if not newbuf: return None
             buf += newbuf
@@ -427,7 +428,7 @@ class ModelServer(threading.Thread):
     def run(self):
 
         imgsize = -1
-        res = '0 none'
+        res = 'none 0.0'
         while (self.dorun):
             self.connect()  # wait for connection
             try:
@@ -435,12 +436,23 @@ class ModelServer(threading.Thread):
                 while (self.dorun):
                     try:
                         data = self.connection.recv(256)
-                        data = data.strip().decode('UTF-8')
+                        data = data.strip()
                     except socket.timeout:
                         data = "***"
-                    except:
+                    except Exception as e:
+                        print(e)
                         data = None
-                    
+
+                    buf = b''
+                    if (type(data)!=str):
+                        k = data.find(b'\n')
+                        if (k<0):
+                            data = data.decode('utf-8')
+                        elif (len(data)>k+1):
+                            buf = data[k+2:]
+                            data = data[0:k].decode('utf-8')
+
+
                     if (data!=None and data!="" and data!="***"):
                         self.received = data
                         print('Received: %s' %data)
@@ -449,7 +461,7 @@ class ModelServer(threading.Thread):
                             self.connection.send('ACK\n\r'.encode('UTF-8'))
                         elif v[0]=='GETRESULT':
                             ressend = (res+'\n\r').encode('UTF-8')
-                            self.connection.send(ressend)                            
+                            self.connection.send(ressend)
                         elif v[0]=='EVAL' and len(v)>1:
                             print('Eval image [%s]' %v[1])
                             (p,c) = predictImage(self.model,v[1])
@@ -462,11 +474,12 @@ class ModelServer(threading.Thread):
                             imgheight = int(v[2])
                             imgsize = imgwidth*imgheight*3
                             print("RGB image size: %d" %imgsize)
-                            buf = self.recvall(imgsize)
+                            buf = self.recvall(imgsize, buf)
                             if buf is not None:
                                 print("Image received size: %d " %(len(buf)))
                                 a = np.fromstring(buf, dtype='uint8')
-                                a = a.reshape((imgwidth,imgheight,3))
+                                a = a.reshape((imgheight,imgwidth,3))
+                                a = a / 255.0
                                 inp = np.array([a])
                                 pr = model.predict(inp)
                                 (p,c) = (np.max(pr), classnames[np.argmax(pr)])
