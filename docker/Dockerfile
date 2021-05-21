@@ -1,6 +1,7 @@
 # Docker file for Stage person detection
 
 FROM tensorflow/tensorflow
+#FROM tensorflow/tensorflow:2.3.2-gpu
 
 #
 # USER root
