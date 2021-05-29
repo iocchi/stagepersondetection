@@ -8,6 +8,8 @@ FROM tensorflow/tensorflow
 
 USER root
 
+ARG UID=1000
+ARG GID=1000
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt update && \
@@ -23,6 +25,8 @@ RUN apt update && \
 # Create user: robot (password: robot) with sudo power
 
 RUN useradd -ms /bin/bash robot && echo "robot:robot" | chpasswd && adduser robot sudo
+
+RUN usermod -u $UID robot && groupmod -g $GID robot
 
 # Python modules
 

@@ -14,6 +14,6 @@ if [ ! "$2" == "" ]; then
   VERSION=$2
 fi
 
-docker build -t $IMAGENAME:$VERSION -f $DOCKERFILE .
+docker build --build-arg UID=`id -u` --build-arg GID=`id -g` -t $IMAGENAME:$VERSION -f $DOCKERFILE .
 docker tag $IMAGENAME:$VERSION iocchi/stagepersondetection
 
