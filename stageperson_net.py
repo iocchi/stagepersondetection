@@ -95,8 +95,8 @@ def loadData():
     print('Loaded %d training samples from %d classes.' %(num_samples,num_classes))
     print('Loaded %d test samples from %d classes.' %(test_generator.n,test_generator.num_classes))
 
-    return input_shape, num_classes 
-    
+    return input_shape, num_classes
+
 
 
 
@@ -232,7 +232,7 @@ def StagePersonNet(input_shape, num_classes, regl2 = 0.001, lr=0.001):
     model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
 
     model.summary()
-    
+
     return model
 
 
@@ -243,13 +243,12 @@ Load a trained model
 
 
 def loadModel(modelname):
-    global modelsdir
-    filename = os.path.join(modelsdir, '%s.h5' %modelname)
     try:
-        model = load_model(filename)
-        print("\nModel loaded successfully from file %s\n" %filename)
-    except OSError:    
-        print("\nModel file %s not found!!!\n" %modelname)
+        model = load_model(modelname)
+        print("\nModel loaded successfully from file %s\n" %modelname)
+    except OSError as e:
+        print(e)
+        print("\n!!! Model %s not loaded !!!\n" %modelname)
         model = None
     return model
 
@@ -278,11 +277,8 @@ Save the model
 """
 
 def saveModel(model, modelname):
-    global modelsdir
-    models_dir = datadir + '/models/'
-    filename = os.path.join(modelsdir, '%s.h5' %modelname)
-    model.save(filename)
-    print("\nModel saved successfully on file %s\n" %filename)
+    model.save(modelname)
+    print("\nModel saved successfully on file %s\n" %modelname)
 
 
 """
@@ -393,7 +389,7 @@ class ModelServer(threading.Thread):
         self.model = model
 
         print("Model Server running on port %d" %port)
-        
+
         self.dorun = True # server running
         self.connection = None  # connection object
 
@@ -522,6 +518,18 @@ def startServer(port, model):
     mserver.stop()
 
 
+
+
+def clean(modelname):
+    global modelsdir
+    r = modelname
+    if r[0:6]!=modelsdir:
+      r = modelsdir + '/' + r
+    if r[-3:]!='.h5':
+      r = r + '.h5'
+    return r
+
+
 if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
@@ -546,19 +554,21 @@ if __name__=='__main__':
         print("Please specify a model name and an operation to perform.")
         sys.exit(1)
 
+    modelname = clean(args.modelname)
+
     if (args.train):
-        doTrain(args.modelname)
+        doTrain(modelname)
     elif (args.test):
-        model = loadModel(args.modelname)
+        model = loadModel(modelname)
         evalModel(model)
     elif (args.moretrain):
-        moreTrain(args.modelname)
+        moreTrain(modelname)
     elif (args.predict != None):
-        model = loadModel(args.modelname)
+        model = loadModel(modelname)
         (p,c) = predictImage(model,args.predict)
         print("Predicted: %s, prob: %.3f" %(c,p))
     elif (args.server):
-        model = loadModel(args.modelname)
+        model = loadModel(modelname)
         startServer(args.server_port, model)
     else:
         print("Please specify a model name and an operation to perform.")
